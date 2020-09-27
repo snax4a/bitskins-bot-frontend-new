@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap');
+
+// global styles
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  cursor: pointer;
+}
+
+li,
+a,
+button {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.app-container {
+  min-height: 320px;
+}
+
+.admin-nav {
+  padding-top: 0;
+  padding-bottom: 0;
+  background-color: #e8e9ea;
+  border-bottom: 1px solid #ccc;
+}
+
+.nav-link {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+header {
+  .top-nav {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+
+    .logo {
+      max-height: 24px;
+      cursor: pointer;
+    }
+    .nav__links {
+      margin: 0;
+
+      li {
+        display: inline-block;
+
+        a {
+          transition: all 0.3s ease 0s;
+          font-size: 14px;
+          color: #edf0f1;
+
+          &:hover {
+            color: #0088a9;
+          }
+        }
+      }
+    }
+    .logout {
+      padding: 3px 25px;
+      background-color: rgba(0, 136, 169, 1);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease 0s;
+      font-size: 14px;
+      color: #edf0f1;
+
+      &:hover {
+        background-color: rgba(0, 136, 169, 0.8);
+      }
+    }
+  }
+}
+
+.item-placeholder {
+  padding: 50px;
+  background-color: #f3f3f3;
+  border: 1px solid #d2d2d2;
+  border-radius: 0.5rem;
+  height: 369px;
+}
+
+.price-data {
+  border: 1px solid;
+  padding: 20px;
+}

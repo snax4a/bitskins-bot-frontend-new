@@ -97,7 +97,7 @@ function List({ match }) {
             ))}
           {!items && (
             <tr>
-              <td colSpan="6" className="text-center">
+              <td colSpan="7" className="text-center">
                 <span className="spinner-border spinner-border-lg align-center"></span>
               </td>
             </tr>

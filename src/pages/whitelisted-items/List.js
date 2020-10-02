@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
 import { whitelistedItemsService } from "_services";
+import Moment from "react-moment";
 
 function List({ match }) {
   const { path } = match;
@@ -25,6 +25,21 @@ function List({ match }) {
     });
   }
 
+  function UpdatedAt({ date }) {
+    const color = isOutdated(date) ? 'red' : 'green';
+
+    return (
+      <Moment format="DD-MM-YYYY HH:mm" style={{ color }}>
+        {date}
+      </Moment>
+    )
+  }
+
+  function isOutdated(dateString) {
+    const SIX_HOURS = 6* 60 * 60 * 1000;
+    return new Date() - new Date(dateString) >= SIX_HOURS;
+  }
+
   return (
     <div>
       <h1>Whitelisted Items</h1>
@@ -35,10 +50,12 @@ function List({ match }) {
       <table className="table table-striped">
         <thead>
           <tr>
-            <th style={{ width: "10%" }}>Img</th>
-            <th style={{ width: "40%" }}>Name</th>
-            <th style={{ width: "20%" }}>Price Multiplier</th>
-            <th style={{ width: "20%" }}>Max Quantity</th>
+            <th style={{ width: "5%" }}>Img</th>
+            <th style={{ width: "30%" }}>Name</th>
+            <th style={{ width: "15%" }}>Saved Price</th>
+            <th style={{ width: "20%" }}>Price Updated At</th>
+            <th style={{ width: "10%" }}>Price Multiplier</th>
+            <th style={{ width: "10%" }}>Max Quantity</th>
             <th style={{ width: "10%" }}></th>
           </tr>
         </thead>
@@ -46,8 +63,13 @@ function List({ match }) {
           {items &&
             items.map((item) => (
               <tr key={item.id}>
-                <td><img src={item.image} alt="" style={{ "max-width": 50 }} /></td>
+                <td>
+                  <img src={item.image} alt="" style={{ maxWidth: 50 }} />
+                </td>
                 <td>{item.name}</td>
+                <td>${item.price}</td>
+                <td> <UpdatedAt date={item.priceUpdatedAt} />
+                </td>
                 <td>{item.priceMultiplier}</td>
                 <td>
                   {item.maxQuantity !== 0 ? item.maxQuantity : "unlimited"}

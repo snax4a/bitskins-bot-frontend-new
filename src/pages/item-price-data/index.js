@@ -3,11 +3,11 @@ import { Formik, Field, Form } from "formik";
 import * as Yup from "yup";
 
 import { List } from "./List";
-import { bitskinsService, alertService } from "_services";
+import { bitskinsService, whitelistedItemsService, alertService } from "_services";
 import { PriceData } from "./PriceData";
 
 function ItemPriceData() {
-  const [externalData, setExternalData] = useState(null);
+  const [whitelistedItem, setWhitelistedItem] = useState(null);
   const [bitskinsData, setBitskinsData] = useState(null);
   const [bitskinsLoading, setBitskinsLoading] = useState(false);
 
@@ -21,15 +21,15 @@ function ItemPriceData() {
 
   function onSubmit(fields, { setStatus, setSubmitting }) {
     setStatus();
-    getExternalPrice(fields.itemName, setSubmitting);
+    getWhitelistedItem(fields.itemName, setSubmitting);
     getBitskinsSales(fields.itemName, setSubmitting);
   }
 
-  function getExternalPrice(itemName, setSubmitting) {
-    bitskinsService
-      .getExternalPrice(itemName)
+  function getWhitelistedItem(itemName, setSubmitting) {
+    whitelistedItemsService
+      .getByName(itemName)
       .then((data) => {
-        setExternalData(data);
+        setWhitelistedItem(data);
         setSubmitting(false);
       })
       .catch((error) => {
@@ -100,7 +100,7 @@ function ItemPriceData() {
           </div>
         </div>
 
-        <PriceData data={externalData} />
+        <PriceData item={whitelistedItem} />
         <List data={bitskinsData} loading={bitskinsLoading} />
       </div>
     </div>

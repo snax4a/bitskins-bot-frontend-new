@@ -7,6 +7,7 @@ const WIKI_API_URL = "https://wiki.cs.money/graphql";
 export const whitelistedItemsService = {
   getAll,
   getById,
+  getByName,
   create,
   update,
   delete: _delete,
@@ -19,6 +20,10 @@ function getAll() {
 
 function getById(id) {
   return fetchWrapper.get(`${baseUrl}/${id}`);
+}
+
+function getByName(itemName) {
+  return fetchWrapper.get(`${baseUrl}/get-by-name/${itemName}`);
 }
 
 function create(params) {

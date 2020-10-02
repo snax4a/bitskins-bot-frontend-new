@@ -35,6 +35,7 @@ function List({ match }) {
       <table className="table table-striped">
         <thead>
           <tr>
+            <th style={{ width: "10%" }}>Img</th>
             <th style={{ width: "40%" }}>Name</th>
             <th style={{ width: "20%" }}>Price Multiplier</th>
             <th style={{ width: "20%" }}>Max Quantity</th>
@@ -45,6 +46,7 @@ function List({ match }) {
           {items &&
             items.map((item) => (
               <tr key={item.id}>
+                <td><img src={item.image} alt="" style={{ "max-width": 50 }} /></td>
                 <td>{item.name}</td>
                 <td>{item.priceMultiplier}</td>
                 <td>

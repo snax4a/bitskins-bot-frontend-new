@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -8,6 +8,11 @@ import { whitelistedItemsService, alertService } from "_services";
 function AddEdit({ history, match }) {
   const { id } = match.params;
   const isAddMode = !id;
+  const [isFetching, setFetching] = useState(false);
+  const [fetchingWiki, setFetchingWiki] = useState(false);
+  const [shouldConfirm, setshouldConfirm] = useState(false);
+  const [whitelistedItem, setWhitelistedItem] = useState({});
+  const [isConfirming, setConfirming] = useState(false);
 
   const initialValues = {
     name: "",
@@ -24,14 +29,54 @@ function AddEdit({ history, match }) {
 
   function onSubmit(fields, { setStatus, setSubmitting }) {
     setStatus();
+    setFetchingWiki(true);
+
+    whitelistedItemsService
+      .getWikiData(fields.name)
+      .then((res) => {
+        setFetchingWiki(false);
+        const data = res.data.search_ten.skins[0];
+
+        // validate data
+        if (!isWikiNameValid(fields.name, data.name)) {
+          alertService.error(
+            "Something is wrong with item name, <b>please contact with dev</b>.",
+            {
+              autoClose: false,
+            }
+          );
+        }
+
+        let item = fields;
+        item.image = data.image;
+        item.slug = data._id;
+
+        setWhitelistedItem(item);
+        setshouldConfirm(true);
+      })
+      .catch((error) => {
+        setFetchingWiki(false);
+        setSubmitting(false);
+        alertService.error(error);
+      });
+  }
+
+  function onConfirm() {
+    setConfirming(true);
+
     if (isAddMode) {
-      createItem(fields, setSubmitting);
+      createItem(whitelistedItem);
     } else {
-      updateItem(id, fields, setSubmitting);
+      updateItem(id, whitelistedItem);
     }
   }
 
-  function createItem(fields, setSubmitting) {
+  function isWikiNameValid(itemName, wikiName) {
+    const baseName = itemName.replace(/\s{1}\((.+)\)/, "");
+    return baseName === wikiName;
+  }
+
+  function createItem(fields) {
     whitelistedItemsService
       .create(fields)
       .then(() => {
@@ -41,12 +86,12 @@ function AddEdit({ history, match }) {
         history.push(".");
       })
       .catch((error) => {
-        setSubmitting(false);
+        setConfirming(false);
         alertService.error(error);
       });
   }
 
-  function updateItem(id, fields, setSubmitting) {
+  function updateItem(id, fields) {
     whitelistedItemsService
       .update(id, fields)
       .then(() => {
@@ -56,120 +101,149 @@ function AddEdit({ history, match }) {
         history.push("..");
       })
       .catch((error) => {
-        setSubmitting(false);
+        setConfirming(false);
         alertService.error(error);
       });
   }
 
+  function Loader() {
+    return <span className="spinner-border spinner-border-sm mr-1"></span>;
+  }
+
   return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={validationSchema}
-      onSubmit={onSubmit}
-    >
-      {({ errors, touched, isSubmitting, setFieldValue }) => {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        useEffect(() => {
-          if (!isAddMode) {
-            // get user and set form fields
-            whitelistedItemsService.getById(id).then((user) => {
-              const fields = [
-                "name",
-                "image",
-                "maxQuantity",
-                "priceMultiplier",
-              ];
-              fields.forEach((field) =>
-                setFieldValue(field, user[field], false)
+    <div className="row">
+      <div className="col-6">
+        <div className="item-placeholder">
+          {fetchingWiki || isFetching ? (
+            <Loader />
+          ) : (
+            <img src={whitelistedItem.image} alt="preview" />
+          )}
+          {shouldConfirm && (
+            <button
+              className="btn btn-warning btn-block"
+              onClick={onConfirm}
+              disabled={isConfirming}
+            >
+              {isConfirming && <Loader />}
+              Confirm and Save
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="col-6">
+        <Formik
+          initialValues={initialValues}
+          validationSchema={validationSchema}
+          onSubmit={onSubmit}
+        >
+          {({ errors, touched, isSubmitting, setFieldValue }) => {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            useEffect(() => {
+              if (!isAddMode) {
+                setFetching(true);
+                // get user and set form fields
+                whitelistedItemsService.getById(id).then((item) => {
+                  const fields = ["name", "maxQuantity", "priceMultiplier"];
+                  fields.forEach((field) =>
+                    setFieldValue(field, item[field], false)
+                  );
+                  setWhitelistedItem(item);
+                  setFetching(false);
+                });
+              }
+            }, [setFieldValue]);
+
+            if (isFetching) {
+              return <Loader />;
+            } else {
+              return (
+                <Form>
+                  <h1>{isAddMode ? "Add Item" : "Edit Item"}</h1>
+                  <div className="form-row">
+                    <div className="form-group col">
+                      <label>Item Name</label>
+                      <Field
+                        name="name"
+                        type="text"
+                        className={
+                          "form-control" +
+                          (errors.name && touched.name ? " is-invalid" : "")
+                        }
+                      />
+                      <ErrorMessage
+                        name="name"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group col">
+                      <label>
+                        Max Quantity (Set it to 0 if you want unlimited
+                        quantity)
+                      </label>
+                      <Field
+                        name="maxQuantity"
+                        type="number"
+                        className={
+                          "form-control" +
+                          (errors.maxQuantity && touched.maxQuantity
+                            ? " is-invalid"
+                            : "")
+                        }
+                      />
+                      <ErrorMessage
+                        name="maxQuantity"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group col">
+                      <label>Price Multiplier</label>
+                      <Field
+                        name="priceMultiplier"
+                        type="number"
+                        className={
+                          "form-control" +
+                          (errors.priceMultiplier && touched.priceMultiplier
+                            ? " is-invalid"
+                            : "")
+                        }
+                      />
+                      <ErrorMessage
+                        name="priceMultiplier"
+                        component="div"
+                        className="invalid-feedback"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="btn btn-primary"
+                    >
+                      {isSubmitting && <Loader />}
+                      Save
+                    </button>
+                    <Link to={isAddMode ? "." : ".."} className="btn btn-link">
+                      Cancel
+                    </Link>
+                  </div>
+                </Form>
               );
-            });
-          }
-        }, [setFieldValue]);
-
-        return (
-          <Form>
-            <h1>{isAddMode ? "Add Item" : "Edit Item"}</h1>
-            <div className="form-row">
-              <div className="form-group col-6">
-                <label>Item Name</label>
-                <Field
-                  name="name"
-                  type="text"
-                  className={
-                    "form-control" +
-                    (errors.name && touched.name ? " is-invalid" : "")
-                  }
-                />
-                <ErrorMessage
-                  name="name"
-                  component="div"
-                  className="invalid-feedback"
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group col-6">
-                <label>
-                  Max Quantity (Set it to 0 if you want unlimited quantity)
-                </label>
-                <Field
-                  name="maxQuantity"
-                  type="number"
-                  className={
-                    "form-control" +
-                    (errors.maxQuantity && touched.maxQuantity
-                      ? " is-invalid"
-                      : "")
-                  }
-                />
-                <ErrorMessage
-                  name="maxQuantity"
-                  component="div"
-                  className="invalid-feedback"
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group col-6">
-                <label>Price Multiplier</label>
-                <Field
-                  name="priceMultiplier"
-                  type="number"
-                  className={
-                    "form-control" +
-                    (errors.priceMultiplier && touched.priceMultiplier
-                      ? " is-invalid"
-                      : "")
-                  }
-                />
-                <ErrorMessage
-                  name="priceMultiplier"
-                  component="div"
-                  className="invalid-feedback"
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="btn btn-primary"
-              >
-                {isSubmitting && (
-                  <span className="spinner-border spinner-border-sm mr-1"></span>
-                )}
-                Save
-              </button>
-              <Link to={isAddMode ? "." : ".."} className="btn btn-link">
-                Cancel
-              </Link>
-            </div>
-          </Form>
-        );
-      }}
-    </Formik>
+            }
+          }}
+        </Formik>
+      </div>
+    </div>
   );
 }
 

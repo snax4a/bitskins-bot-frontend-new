@@ -31,25 +31,22 @@ function AddEdit({ history, match }) {
     setStatus();
     setFetchingWiki(true);
 
+    const searchName = prepareSearchName(fields.name);
+
     whitelistedItemsService
-      .getWikiData(fields.name)
+      .getWikiData(searchName)
       .then((res) => {
         setFetchingWiki(false);
-        const data = res.data.search_ten.skins[0];
+        const responseSkins = res.data.search_ten.skins;
+        const wikiItem = findItem(responseSkins, fields.name);
 
-        // validate data
-        if (!isWikiNameValid(fields.name, data.name)) {
-          alertService.error(
-            "Something is wrong with item name, <b>please contact with dev</b>.",
-            {
-              autoClose: false,
-            }
-          );
+        if (wikiItem === null) {
+          return alertService.error("Item not found on wiki.cs.money", { autoClose: false });
         }
 
         let item = fields;
-        item.image = data.image;
-        item.slug = data._id;
+        item.image = wikiItem.image;
+        item.slug = wikiItem._id;
 
         setWhitelistedItem(item);
         setshouldConfirm(true);
@@ -71,9 +68,26 @@ function AddEdit({ history, match }) {
     }
   }
 
-  function isWikiNameValid(itemName, wikiName) {
-    const baseName = itemName.replace(/\s{1}\((.+)\)/, "");
-    return baseName === wikiName;
+  function removeWearValue(itemName) {
+    return itemName.replace(/\s{1}\((.+)\)/, "");
+  }
+
+  function prepareSearchName(itemName) {
+    return removeWearValue(itemName).replace("|", "");
+  }
+
+  function findItem(items, itemName) {
+    const nameWithoutWearValue = removeWearValue(itemName);
+    let foundItem = null
+
+    items.forEach(item => {
+      if (removeWearValue(item.name) === nameWithoutWearValue) {
+        foundItem = item;
+        return true;
+      }
+    });
+
+    return foundItem;
   }
 
   function createItem(fields) {
